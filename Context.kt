@@ -14,9 +14,9 @@ class Context(
 
     var childCount: Int = 0
 
-    val isRoot: Boolean get() = order == 0
+    val isRoot: Boolean get() = order == -1
 
-    private val escapeIndex get() = childCount
+    val escapeIndex get() = childCount
 
     /**
      * Increment this context occurrence and propagates through the low order context
