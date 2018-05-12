@@ -10,13 +10,13 @@ class PpmEncoder(
 
     private val seen = BooleanArray(256) { false }
 
-    private var context = Context(-1, 0, 0)
+    private var context = Context(-1, -1, 0)
 
     fun encode(symbol: Int) {
         context = encodeAux(context, symbol)
 
         if(!seen[symbol]) { // first time symbol appears
-            encoder.write(FlatFrequencyTable(remainingSymbols.size), remainingSymbols.indexOf(symbol).takeIf { it >= 0 }!!)
+            encoder.write(FlatFrequencyTable(remainingSymbols.size), remainingSymbols.indexOf(symbol))
             remainingSymbols.remove(symbol)
             seen[symbol] = true
         }
@@ -38,13 +38,15 @@ class PpmEncoder(
 
         val (frequencies, symbolContext) = context.getFrequenciesAndSymbolContext(symbol)
 
-        encoder.write(SimpleFrequencyTable(frequencies), context.index)
-
         return if(symbolContext.symbol == symbol) { // the symbol is already a child of that context
+            encoder.write(SimpleFrequencyTable(frequencies), symbolContext.index)
+
             symbolContext.increment()
             symbolContext
         } else {
-            symbolContext.sibling = Context(symbol, symbolContext.order, 0)
+            encoder.write(SimpleFrequencyTable(frequencies), context.escapeIndex)
+
+            symbolContext.sibling = Context(symbol, symbolContext.order, symbolContext.index + 1)
             context.childCount++
 
             symbolContext.sibling!!.vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
