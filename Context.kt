@@ -9,7 +9,7 @@ class Context(
         private val index: Int
 ) {
 
-    private var vine: Context? = null
+    var vine: Context? = null
 
     var child: Context? = null
 
@@ -27,6 +27,7 @@ class Context(
 
         if(child == null) { // this context has no childs, create the child with this symbol
             this.child = Context(symbol,  order + 1, 0)
+            childCount++
             if(this.isRoot) {
                 this.child!!.vine = this
             } else {
@@ -105,12 +106,8 @@ class Context(
         if(!vine!!.isRoot) vine!!.increment()
     }
 
-    private val isRoot: Boolean get() = order == 0
+    val isRoot: Boolean get() = order == 0
 
     private val escapeIndex get() = childCount
 
-}
-
-fun main(args: Array<String>) {
-    println("ok")
 }
