@@ -1,10 +1,9 @@
 class Context(
         val symbol: Int,
         val order: Int,
-        val index: Int
+        val index: Int,
+        var vine: Context? = null
 ) {
-
-    var vine: Context? = null
 
     var child: Context? = null
 
