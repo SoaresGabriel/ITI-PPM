@@ -1,25 +1,55 @@
 import arithmeticEncoder.ArithmeticEncoder
 import arithmeticEncoder.FlatFrequencyTable
+import arithmeticEncoder.SimpleFrequencyTable
 
 class PpmEncoder(
         private val encoder: ArithmeticEncoder,
-        contextOrder: Int
+        private val maxContextOrder: Int
 ) {
     private val remainingSymbols: MutableList<Int> = (0..255).toMutableList()
 
     private val seen = BooleanArray(256) { false }
 
-    init { maxContextOrder = contextOrder }
-
     private var context = Context(-1, 0, 0)
 
     fun encode(symbol: Int) {
-        context = context.encode(encoder, symbol)
+        context = encodeAux(context, symbol)
 
         if(!seen[symbol]) { // first time symbol appears
             encoder.write(FlatFrequencyTable(remainingSymbols.size), remainingSymbols.indexOf(symbol).takeIf { it >= 0 }!!)
             remainingSymbols.remove(symbol)
             seen[symbol] = true
+        }
+    }
+
+    private fun encodeAux(context: Context, symbol: Int): Context {
+        if(context.order == maxContextOrder) { // cant create a context with higher order, go to shorter context
+            return encodeAux(context.vine!!, symbol)
+        }
+
+        if(context.child == null) { // this context has no childs, create the child with this symbol
+            context.child = Context(symbol, context.order + 1, 0)
+            context.childCount++
+
+            context.child!!.vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+
+            return context.child!!
+        }
+
+        val (frequencies, symbolContext) = context.getFrequenciesAndSymbolContext(symbol)
+
+        encoder.write(SimpleFrequencyTable(frequencies), context.index)
+
+        return if(symbolContext.symbol == symbol) { // the symbol is already a child of that context
+            symbolContext.increment()
+            symbolContext
+        } else {
+            symbolContext.sibling = Context(symbol, symbolContext.order, 0)
+            context.childCount++
+
+            symbolContext.sibling!!.vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+
+            symbolContext.sibling!!
         }
     }
 }
