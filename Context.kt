@@ -33,8 +33,7 @@ class Context(
      * */
     fun getFrequenciesAndSymbolContext(symbol: Int): FrequenciesAndContext {
 
-        val hasEscape = childCount < 256
-        val frequencies = IntArray(if(hasEscape) childCount + 1 else 256)
+        val frequencies = IntArray(childCount + 1)
         var wantedContext: Context? = null
 
         var currentContext = this.child!!
@@ -49,11 +48,7 @@ class Context(
             currentContext.sibling?.let { currentContext = it } ?: break
         }
 
-        if(hasEscape) { // add the escape count
-            frequencies[escapeIndex] = childCount
-        }
-
-        if(!hasEscape && wantedContext == null) throw IllegalStateException("This context has $childCount childs but no $symbol")
+        frequencies[escapeIndex] = childCount // add the escape count
 
         if (wantedContext == null) {
             wantedContext = currentContext

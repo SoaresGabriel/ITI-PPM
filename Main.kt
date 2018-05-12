@@ -45,6 +45,8 @@ fun compress(input: InputStream, output: BitOutputStream, maxContextOrder: Int) 
         ppmEncoder.encode(symbol)
     }
 
+    ppmEncoder.encode(256) // EOF
+
     encoder.finish()
 }
 
@@ -55,7 +57,7 @@ fun decompress(input: BitInputStream, output: OutputStream, maxContextOrder: Int
 
     while(true) {
         val symbol = ppmDecoder.decode()
-        if(symbol == -1) return
+        if(symbol == 256) return
 
         output.write(symbol)
     }

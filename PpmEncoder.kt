@@ -6,9 +6,9 @@ class PpmEncoder(
         private val encoder: ArithmeticEncoder,
         private val maxContextOrder: Int
 ) {
-    private val remainingSymbols: MutableList<Int> = (0..255).toMutableList()
+    private val remainingSymbols: MutableList<Int> = (0..256).toMutableList()
 
-    private val seen = BooleanArray(256) { false }
+    private val seen = BooleanArray(257) { false }
 
     private var context = Context(-1, -1, 0)
 

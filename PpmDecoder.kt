@@ -6,7 +6,7 @@ class PpmDecoder(
     private val decoder: ArithmeticDecoder,
     private val maxContextOrder: Int
 ) {
-    private val remainingSymbols: MutableList<Int> = (0..255).toMutableList()
+    private val remainingSymbols: MutableList<Int> = (0..256).toMutableList()
 
     private var context = Context(-1, -1, 0)
 
