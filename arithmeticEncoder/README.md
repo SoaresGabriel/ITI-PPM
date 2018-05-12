@@ -1,0 +1,1 @@
+Esta implementação do codificador aritimético foi obtida [neste repositório](https://github.com/nayuki/Reference-arithmetic-coding)
