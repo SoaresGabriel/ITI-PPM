@@ -39,7 +39,8 @@ class PpmEncoder(
     }
 
     private fun writeNewSymbol(symbol: Int) {
-        encoder.write(FlatFrequencyTable(remainingSymbols.size), remainingSymbols.indexOf(symbol))
-        remainingSymbols.remove(symbol)
+        val index = remainingSymbols.indexOf(symbol)
+        encoder.write(FlatFrequencyTable(remainingSymbols.size), index)
+        remainingSymbols.removeAt(index)
     }
 }

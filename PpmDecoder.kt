@@ -45,7 +45,7 @@ class PpmDecoder(
         val index = decoder.read(frequencyTable)
 
         val symbol = remainingSymbols[index]
-        remainingSymbols.remove(symbol)
+        remainingSymbols.removeAt(index)
 
         return symbol
     }
