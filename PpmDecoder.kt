@@ -18,22 +18,21 @@ class PpmDecoder(
     }
 
     private fun decodeAux(context: Context): Context {
-        if(context.order == maxContextOrder) {
+        if(context.order == maxContextOrder) { // cant create a context with higher order, go to shorter context
             return decodeAux(context.vine!!)
         }
 
-        if(context.isRoot && context.child == null){ // first call
-            val symbol = readNewSymbol()
+        if(context.child == null){ // this context has no children
 
-            context.child = Context(symbol, context.order + 1, 0, context)
-            context.childCount++
+            val newChild = if(context.isRoot) { // first call
+                val symbol = readNewSymbol()
+                Context(symbol, context.order + 1, 0, context)
+            } else {
+                val vine = decodeAux(context.vine!!)
+                Context(vine.symbol, context.order + 1, 0, vine)
+            }
 
-            return context.child!!
-        }
-
-        if(context.child == null) {
-            val vine = decodeAux(context.vine!!)
-            context.child = Context(vine.symbol, context.order + 1, 0, vine)
+            context.child = newChild
             context.childCount++
 
             return context.child!!
