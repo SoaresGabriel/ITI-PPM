@@ -2,7 +2,7 @@ class Context(
         val symbol: Int,
         val order: Int,
         val index: Int,
-        var vine: Context? = null
+        val vine: Context?
 ) {
 
     var child: Context? = null
@@ -22,7 +22,7 @@ class Context(
      * */
     fun increment() {
         this.count++
-        if(!vine!!.isRoot) vine!!.increment()
+        if(!vine!!.isRoot) vine.increment()
     }
 
     /**

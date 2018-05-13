@@ -8,7 +8,7 @@ class PpmDecoder(
 ) {
     private val remainingSymbols: MutableList<Int> = (0..256).toMutableList()
 
-    private var context = Context(-1, -1, 0)
+    private var context = Context(-1, -1, 0, null)
 
     fun decode(): Int {
 
@@ -25,18 +25,17 @@ class PpmDecoder(
         if(context.isRoot && context.child == null){ // first call
             val symbol = readNewSymbol()
 
-            context.child = Context(symbol, context.order + 1, 0)
+            context.child = Context(symbol, context.order + 1, 0, context)
             context.childCount++
-            context.child!!.vine = context
 
             return context.child!!
         }
 
         if(context.child == null) {
             val vine = decodeAux(context.vine!!)
-            context.child = Context(vine.symbol, context.order + 1, 0)
+            context.child = Context(vine.symbol, context.order + 1, 0, vine)
             context.childCount++
-            context.child!!.vine = vine
+
             return context.child!!
         }
 

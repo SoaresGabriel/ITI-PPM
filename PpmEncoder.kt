@@ -10,7 +10,7 @@ class PpmEncoder(
 
     private val seen = BooleanArray(257) { false }
 
-    private var context = Context(-1, -1, 0)
+    private var context = Context(-1, -1, 0, null)
 
     fun encode(symbol: Int) {
         context = encodeAux(context, symbol)
@@ -28,10 +28,11 @@ class PpmEncoder(
         }
 
         if(context.child == null) { // this context has no childs, create the child with this symbol
-            context.child = Context(symbol, context.order + 1, 0)
-            context.childCount++
 
-            context.child!!.vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+            val vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+
+            context.child = Context(symbol, context.order + 1, 0, vine)
+            context.childCount++
 
             return context.child!!
         }
@@ -46,10 +47,10 @@ class PpmEncoder(
         } else {
             encoder.write(SimpleFrequencyTable(frequencies), context.escapeIndex)
 
-            symbolContext.sibling = Context(symbol, symbolContext.order, symbolContext.index + 1)
-            context.childCount++
+            val vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
 
-            symbolContext.sibling!!.vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+            symbolContext.sibling = Context(symbol, symbolContext.order, symbolContext.index + 1, vine)
+            context.childCount++
 
             symbolContext.sibling!!
         }
