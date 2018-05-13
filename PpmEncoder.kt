@@ -8,18 +8,10 @@ class PpmEncoder(
 ) {
     private val remainingSymbols: MutableList<Int> = (0..256).toMutableList()
 
-    private val seen = BooleanArray(257) { false }
-
     private var context = Context(-1, -1, 0, null)
 
     fun encode(symbol: Int) {
         context = encodeAux(context, symbol)
-
-        if(!seen[symbol]) { // first time symbol appears
-            encoder.write(FlatFrequencyTable(remainingSymbols.size), remainingSymbols.indexOf(symbol))
-            remainingSymbols.remove(symbol)
-            seen[symbol] = true
-        }
     }
 
     private fun encodeAux(context: Context, symbol: Int): Context {
@@ -27,9 +19,12 @@ class PpmEncoder(
             return encodeAux(context.vine!!, symbol)
         }
 
-        if(context.child == null) { // this context has no childs, create the child with this symbol
+        if(context.child == null) { // this context has no children, create the child with this symbol
 
-            val vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+            val vine = if(context.isRoot) {
+                writeNewSymbol(symbol)
+                context
+            } else encodeAux(context.vine!!, symbol)
 
             context.child = Context(symbol, context.order + 1, 0, vine)
             context.childCount++
@@ -47,12 +42,20 @@ class PpmEncoder(
         } else {
             encoder.write(SimpleFrequencyTable(frequencies), context.escapeIndex)
 
-            val vine = if(context.isRoot) context else encodeAux(context.vine!!, symbol)
+            val vine = if(context.isRoot) {
+                writeNewSymbol(symbol)
+                context
+            } else encodeAux(context.vine!!, symbol)
 
             symbolContext.sibling = Context(symbol, symbolContext.order, symbolContext.index + 1, vine)
             context.childCount++
 
             symbolContext.sibling!!
         }
+    }
+
+    private fun writeNewSymbol(symbol: Int) {
+        encoder.write(FlatFrequencyTable(remainingSymbols.size), remainingSymbols.indexOf(symbol))
+        remainingSymbols.remove(symbol)
     }
 }
