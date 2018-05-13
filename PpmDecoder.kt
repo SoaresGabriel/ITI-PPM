@@ -11,16 +11,16 @@ class PpmDecoder(
     private var context = Context(-1, -1, null)
 
     fun decode(): Int {
-        context = decodeAux(context)
+        context = decodeAux(context, BooleanArray(256))
         return context.symbol
     }
 
-    private fun decodeAux(context: Context): Context {
+    private fun decodeAux(context: Context, removeSymbol: BooleanArray): Context {
         if(context.order == maxContextOrder) { // cant create a context with higher order, go to shorter context
-            return decodeAux(context.vine!!)
+            return decodeAux(context.vine!!, removeSymbol)
         }
 
-        val frequencies = context.getFrequencies()
+        val (frequencies, contexts) = context.getFrequenciesAndContexts(removeSymbol)
 
         val index = if (frequencies.isNotEmpty()){
             decoder.read(SimpleFrequencyTable(frequencies)) // decode if this context has children
@@ -32,11 +32,11 @@ class PpmDecoder(
                 val symbol = readNewSymbol()
                 context.newChild(symbol, context)
             } else {
-                val vine = decodeAux(context.vine!!)
+                val vine = decodeAux(context.vine!!, removeSymbol)
                 context.newChild(vine.symbol, vine)
             }
         } else {
-            context.getChildAt(index).apply { increment() }
+            contexts[index].apply { increment() }
         }
     }
 

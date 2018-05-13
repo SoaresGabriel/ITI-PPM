@@ -11,15 +11,15 @@ class PpmEncoder(
     private var context = Context(-1, -1, null)
 
     fun encode(symbol: Int) {
-        context = encodeAux(context, symbol)
+        context = encodeAux(context, symbol, BooleanArray(256))
     }
 
-    private fun encodeAux(context: Context, symbol: Int): Context {
+    private fun encodeAux(context: Context, symbol: Int, removeSymbol: BooleanArray): Context {
         if(context.order == maxContextOrder) { // cant create a context with higher order, go to shorter context
-            return encodeAux(context.vine!!, symbol)
+            return encodeAux(context.vine!!, symbol, removeSymbol)
         }
 
-        val (frequencies, symbolContext, index) = context.getFrequenciesAndSymbolContext(symbol)
+        val (frequencies, symbolContext, index) = context.getFrequenciesAndSymbolContext(symbol, removeSymbol)
 
         // encode if have children
         if(frequencies.isNotEmpty()) encoder.write(SimpleFrequencyTable(frequencies), index)
@@ -29,7 +29,7 @@ class PpmEncoder(
             val vine = if(context.isRoot) {
                 writeNewSymbol(symbol)
                 context
-            } else encodeAux(context.vine!!, symbol)
+            } else encodeAux(context.vine!!, symbol, removeSymbol)
 
             context.newChild(symbol, vine)
         } else {

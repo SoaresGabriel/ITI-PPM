@@ -9,23 +9,12 @@ class Context(
 
     private var count: Int = 1
 
-    private var childCount: Int = 0
-
     val isRoot: Boolean get() = order == -1
 
     fun newChild(symbol: Int, vine: Context): Context {
         val newChild = Context(symbol, this.order + 1, vine, sibling = this.child)
         this.child = newChild
-        childCount++
         return newChild
-    }
-
-    fun getChildAt(index: Int): Context {
-        var current = child!!
-        for(i in 0 until index) {
-            current = current.sibling!!
-        }
-        return current
     }
 
     /**
@@ -42,47 +31,80 @@ class Context(
      * @return the array of frequencies and the context of the symbol if its been found,
      * or the last context otherwise.
      * */
-    fun getFrequenciesAndSymbolContext(symbol: Int): FrequenciesAndContext {
+    fun getFrequenciesAndSymbolContext(symbol: Int, removeSymbol: BooleanArray): FrequenciesAndContext {
 
-        if(this.child == null) {
-            return FrequenciesAndContext(IntArray(0), null, 0)
-        }
-
-        val frequencies = IntArray(childCount + 1)
+        val frequencies = mutableListOf<Int>()
 
         var wantedContext: Context? = null
-        var wantedIndex: Int = -1
+        var wantedIndex: Int = frequencies.lastIndex
 
-        var c = 0
-        var currentContext = this.child!!
-        while(true) {
-            if(currentContext.symbol == symbol) { // symbol found in childs
-                wantedContext = currentContext
-                wantedIndex = c
+        if(this.child != null) {
+            var c = 0
+            var currentContext = this.child!!
+            while(true) {
+                if(!removeSymbol[currentContext.symbol]) {
+                    removeSymbol[currentContext.symbol] = true
+
+                    if(currentContext.symbol == symbol) { // symbol found in childs
+                        wantedContext = currentContext
+                        wantedIndex = c
+                    }
+
+                    frequencies.add(currentContext.count)
+                    c++
+                }
+
+                currentContext = currentContext.sibling ?: break
             }
 
-            frequencies[c++] = currentContext.count
+            if(c > 0) frequencies.add(c) // add the escape count
 
-            // current is the last element when while breaks
-            currentContext = currentContext.sibling ?: break
+            if (wantedContext == null) {
+                wantedIndex = frequencies.lastIndex // escape index
+            }
         }
 
-        frequencies[c] = childCount // add the escape count
-
-        if (wantedContext == null) {
-            wantedIndex = frequencies.lastIndex // escape index
-        }
-
-        return FrequenciesAndContext(frequencies, wantedContext, wantedIndex)
+        return FrequenciesAndContext(frequencies.toIntArray(), wantedContext, wantedIndex)
     }
-
-    fun getFrequencies(): IntArray = getFrequenciesAndSymbolContext(-1).component1()
 
     // used to return two results in the getFrequenciesAndSymbolContext function
     class FrequenciesAndContext(private val frequencies: IntArray, private val context: Context?, private val index: Int) {
         operator fun component1(): IntArray = frequencies
         operator fun component2(): Context? = context
         operator fun component3(): Int = index
+    }
+
+    fun getFrequenciesAndContexts(removeSymbol: BooleanArray): FrequenciesAndContexts {
+
+        val frequencies = mutableListOf<Int>()
+        val contexts = mutableListOf<Context>()
+
+
+        if(this.child != null) {
+            var c = 0
+
+            var currentContext = this.child!!
+            while(true) {
+                if(!removeSymbol[currentContext.symbol]) {
+                    removeSymbol[currentContext.symbol] = true
+
+                    frequencies.add(currentContext.count)
+                    contexts.add(currentContext)
+                    c++
+                }
+
+                currentContext = currentContext.sibling ?: break
+            }
+
+            if(c > 0) frequencies.add(c) // add the escape count
+        }
+
+        return FrequenciesAndContexts(frequencies.toIntArray(), contexts)
+    }
+
+    class FrequenciesAndContexts(private val frequencies: IntArray, private val contexts: List<Context>) {
+        operator fun component1(): IntArray = frequencies
+        operator fun component2(): List<Context> = contexts
     }
 
 }
