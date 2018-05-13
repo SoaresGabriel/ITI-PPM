@@ -8,13 +8,11 @@ class PpmDecoder(
 ) {
     private val remainingSymbols: MutableList<Int> = (0..256).toMutableList()
 
-    private var context = Context(-1, -1, 0, null)
+    private var context = Context(-1, -1, null)
 
     fun decode(): Int {
-
         context = decodeAux(context)
         return context.symbol
-
     }
 
     private fun decodeAux(context: Context): Context {
@@ -22,47 +20,23 @@ class PpmDecoder(
             return decodeAux(context.vine!!)
         }
 
-        if(context.child == null){ // this context has no children
+        val frequencies = context.getFrequencies()
 
-            val newChild = if(context.isRoot) { // first call
+        val index = if (frequencies.isNotEmpty()){
+            decoder.read(SimpleFrequencyTable(frequencies)) // decode if this context has children
+        } else frequencies.lastIndex
+
+        return if(index == frequencies.lastIndex) { // escape index
+
+            if(context.isRoot) { // new symbol
                 val symbol = readNewSymbol()
-                Context(symbol, context.order + 1, 0, context)
+                context.newChild(symbol, context)
             } else {
                 val vine = decodeAux(context.vine!!)
-                Context(vine.symbol, context.order + 1, 0, vine)
+                context.newChild(vine.symbol, vine)
             }
-
-            context.child = newChild
-            context.childCount++
-
-            return context.child!!
-        }
-
-        val (frequencies, lastChild) = context.getFrequenciesAndSymbolContext(-1)
-
-        val index = decoder.read(SimpleFrequencyTable(frequencies))
-
-        if(index == context.escapeIndex) {
-
-            val newChild = if(context.isRoot) { // new symbol
-                val symbol = readNewSymbol()
-                Context(symbol, context.order + 1, lastChild.index + 1, vine = context)
-            } else {
-                val vine = decodeAux(context.vine!!)
-                Context(vine.symbol, context.order + 1, lastChild.index + 1, vine)
-            }
-
-            lastChild.sibling = newChild
-            context.childCount++
-
-            return newChild
         } else {
-            var current = context.child!!
-            for(i in 0 until index) {
-                current = current.sibling!!
-            }
-            current.increment()
-            return current
+            context.getChildAt(index).apply { increment() }
         }
     }
 

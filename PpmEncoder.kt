@@ -8,7 +8,7 @@ class PpmEncoder(
 ) {
     private val remainingSymbols: MutableList<Int> = (0..256).toMutableList()
 
-    private var context = Context(-1, -1, 0, null)
+    private var context = Context(-1, -1, null)
 
     fun encode(symbol: Int) {
         context = encodeAux(context, symbol)
@@ -19,38 +19,22 @@ class PpmEncoder(
             return encodeAux(context.vine!!, symbol)
         }
 
-        if(context.child == null) { // this context has no children, create the child with this symbol
+        val (frequencies, symbolContext, index) = context.getFrequenciesAndSymbolContext(symbol)
+
+        // encode if have children
+        if(frequencies.isNotEmpty()) encoder.write(SimpleFrequencyTable(frequencies), index)
+
+        return if(symbolContext == null) { // symbol not found in this context
 
             val vine = if(context.isRoot) {
                 writeNewSymbol(symbol)
                 context
             } else encodeAux(context.vine!!, symbol)
 
-            context.child = Context(symbol, context.order + 1, 0, vine)
-            context.childCount++
-
-            return context.child!!
-        }
-
-        val (frequencies, symbolContext) = context.getFrequenciesAndSymbolContext(symbol)
-
-        return if(symbolContext.symbol == symbol) { // the symbol is already a child of that context
-            encoder.write(SimpleFrequencyTable(frequencies), symbolContext.index)
-
+            context.newChild(symbol, vine)
+        } else {
             symbolContext.increment()
             symbolContext
-        } else {
-            encoder.write(SimpleFrequencyTable(frequencies), context.escapeIndex)
-
-            val vine = if(context.isRoot) {
-                writeNewSymbol(symbol)
-                context
-            } else encodeAux(context.vine!!, symbol)
-
-            symbolContext.sibling = Context(symbol, symbolContext.order, symbolContext.index + 1, vine)
-            context.childCount++
-
-            symbolContext.sibling!!
         }
     }
 
